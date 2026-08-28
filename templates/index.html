@@ -198,6 +198,10 @@
       <div class="field-label">Job Address</div>
       <input class="field-input" id="customerAddress" type="text" placeholder="123 Main St, Minot, ND">
     </div>
+    <div class="field-group">
+      <div class="field-label">Customer Email <span style="color:var(--text-muted);font-weight:400">(optional)</span></div>
+      <input class="field-input" id="customerEmail" type="email" placeholder="customer@email.com">
+    </div>
   </div>
 
   <!-- LINE ITEMS -->
@@ -239,6 +243,7 @@
   <div class="actions" id="actions">
     <button class="btn-clear" onclick="clearEstimate()">Clear</button>
     <button class="btn-pdf" onclick="downloadPDF()">⬇ Download PDF</button>
+    <button class="btn-pdf" onclick="emailPDF()" style="background:#1c1c1c;border:1px solid #2a2a2a;color:#f0f0f0;flex:1;">✉ Email</button>
   </div>
 
 </main>
@@ -466,6 +471,47 @@ function downloadPDF() {
   estimateCounter++;
   localStorage.setItem('estCounter', estimateCounter);
   window.open('/pdf?' + p.toString(), '_blank');
+}
+
+async function emailPDF() {
+  const email = document.getElementById('customerEmail').value.trim();
+  if (!email) { alert('Enter a customer email address first.'); return; }
+  const c = loadContractor();
+  const labor = lineItems.reduce((s,i) => s + parseFloat(i.total||0), 0);
+  const mats = parseFloat(document.getElementById('materialsTotal').value) || 0;
+  const btn = event.target;
+  btn.textContent = 'Sending…';
+  btn.disabled = true;
+  try {
+    const res = await fetch('/email', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        to: email,
+        contractor: c.name,
+        phone: c.phone,
+        customer: document.getElementById('customerName').value,
+        address: document.getElementById('customerAddress').value,
+        items: lineItems,
+        materials: mats,
+        estimate_num: document.getElementById('estimateNum').textContent,
+        date: document.getElementById('estimateDate').textContent,
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      btn.textContent = '✓ Sent!';
+      btn.style.background = '#22c55e';
+      btn.style.color = '#000';
+      setTimeout(() => { btn.textContent = '✉ Email'; btn.style.background = ''; btn.style.color = ''; btn.disabled = false; }, 3000);
+    } else {
+      alert('Email failed: ' + (data.error || 'Unknown error'));
+      btn.textContent = '✉ Email'; btn.disabled = false;
+    }
+  } catch(e) {
+    alert('Email failed: ' + e.message);
+    btn.textContent = '✉ Email'; btn.disabled = false;
+  }
 }
 
 // HISTORY
