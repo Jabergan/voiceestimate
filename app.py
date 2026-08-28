@@ -96,7 +96,7 @@ def parse():
     try:
         payload = json.dumps({
             'model': 'qwen3:14b', 'prompt': prompt, 'stream': False,
-            'options': {'temperature': 0.1, 'num_predict': 512}
+            'options': {'temperature': 0.1, 'num_predict': 800}
         }).encode()
         req = urllib.request.Request(
             'http://localhost:11434/api/generate', data=payload,
