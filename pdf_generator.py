@@ -82,8 +82,9 @@ def generate_pdf(items: list, data: dict) -> bytes:
         [Paragraph('ESTIMATE', style_est_num)],
         [Paragraph(estimate_num, ParagraphStyle('en2', fontSize=16, fontName='Helvetica-Bold',
                                                 textColor=ORANGE, leading=20, alignment=TA_RIGHT))],
-        [Spacer(1, 8)],
-        [Paragraph('DATE', style_label)],  # placeholder row
+        [Spacer(1, 12)],
+        [Paragraph('DATE', ParagraphStyle('dl', fontSize=8, fontName='Helvetica-Bold',
+                                          textColor=TEXT_MUTED, leading=11, alignment=TA_RIGHT))],
         [Paragraph(date_str, ParagraphStyle('dr', fontSize=10, fontName='Helvetica',
                                             textColor=TEXT_DARK, leading=14, alignment=TA_RIGHT))],
     ]
