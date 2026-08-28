@@ -580,10 +580,14 @@ async function editEstimate(id) {
   const res = await fetch('/estimates/' + id);
   const e = await res.json();
   if (!e.items || !e.items.length) { alert('Could not load estimate items.'); return; }
+  // Clear transcript so parseEstimate cannot fire and overwrite our items
+  transcript = '';
+  const parseBtn = document.getElementById('parseBtn');
+  if (parseBtn) { parseBtn.style.display = 'none'; }
   // Switch to main page
   showMain();
-  // Small delay to let DOM settle after page switch
-  await new Promise(r => setTimeout(r, 50));
+  // Wait for DOM
+  await new Promise(r => setTimeout(r, 100));
   // Populate customer fields
   document.getElementById('customerName').value = e.customer || '';
   document.getElementById('customerAddress').value = e.address || '';
@@ -592,11 +596,11 @@ async function editEstimate(id) {
   // Set estimate number
   const numEl = document.getElementById('estimateNum');
   if (numEl) numEl.textContent = e.estimate_num;
-  // Load ALL line items
-  lineItems = e.items.slice();
-  // Set materials
+  // Set materials BEFORE render
   document.getElementById('materialsTotal').value = e.materials || 0;
-  // Render everything
+  // Load ALL line items directly — no parse involved
+  lineItems = JSON.parse(JSON.stringify(e.items));
+  // Render
   renderLineItems();
   updateTotals();
 }
