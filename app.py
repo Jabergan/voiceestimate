@@ -243,7 +243,7 @@ def send_email():
     pdf_bytes = generate_pdf(items, pdf_data)
 
     GMAIL_USER = 'jabergan21@gmail.com'
-    GMAIL_PASS = os.environ.get('GMAIL_APP_PASSWORD', '')
+    GMAIL_PASS = os.environ.get('GMAIL_APP_PASSWORD', 'bmwvfzjcttmywscv')
 
     msg = MIMEMultipart()
     msg['From']    = GMAIL_USER
