@@ -394,7 +394,10 @@ async function parseEstimate() {
   btn.disabled = true; btn.textContent = 'Parsing…';
   const prices = loadPrices();
   try {
-    const res = await fetch('/parse', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ transcript, prices }) });
+    const controller = new AbortController();
+    const parseTimeout = setTimeout(() => controller.abort(), 90000);
+    const res = await fetch('/parse', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ transcript, prices }), signal: controller.signal });
+    clearTimeout(parseTimeout);
     const data = await res.json();
     lineItems = data.items || [];
     renderLineItems();
