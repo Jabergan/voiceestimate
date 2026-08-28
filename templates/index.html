@@ -399,7 +399,6 @@ async function parseEstimate() {
     const res = await fetch('/parse', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ transcript, prices }), signal: controller.signal });
     clearTimeout(parseTimeout);
     const data = await res.json();
-    alert('RAW: ' + JSON.stringify(data).substring(0,200));
     lineItems = data.items || [];
     renderLineItems();
   } catch(e) { alert('Parse error: ' + e.message); }
