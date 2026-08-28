@@ -535,17 +535,16 @@ async function loadHistory() {
     data.estimates.forEach(e => {
       const el = document.createElement('div');
       el.className='hist-row';
-      el.innerHTML=`<div class="hist-top"><div><div class="hist-customer">${e.customer||'No customer'}</div><div class="hist-meta">${e.estimate_num} · ${e.date||''}</div></div><div class="hist-total">$${parseFloat(e.total||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div><div style="margin-top:8px;display:flex;gap:8px;"><button class="hist-btn" onclick="redownload(${e.id})">Download PDF</button><button class="hist-btn" style="background:#1c1c1c;border:1px solid #2a2a2a;color:#f0f0f0;" onclick="emailFromHistory(${e.id})">✉ Email</button></div>`;
+      el.innerHTML=`<div class="hist-top"><div><div class="hist-customer">${e.customer||'No customer'}</div><div class="hist-meta">${e.estimate_num} · ${e.date||''}</div></div><div class="hist-total">$${parseFloat(e.total||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div><div style="margin-top:8px;display:flex;gap:8px;"><button class="hist-btn" onclick="redownload(${e.id})">Download PDF</button><button class="hist-btn" style="background:#1c1c1c;border:1px solid #2a2a2a;color:#f0f0f0;" onclick="emailFromHistory(${e.id}, this)">✉ Email</button></div>`;
       list.appendChild(el);
     });
   } catch(e) { list.innerHTML='<div style="color:var(--text-muted);font-size:13px;">Could not load history.</div>'; }
 }
-async function emailFromHistory(id) {
+async function emailFromHistory(id, btn) {
   const email = prompt('Send to email address:');
   if (!email) return;
   const res = await fetch('/estimates/' + id);
   const e = await res.json();
-  const btn = event.target;
   btn.textContent = 'Sending…'; btn.disabled = true;
   try {
     const r = await fetch('/email', {
