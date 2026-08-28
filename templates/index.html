@@ -272,7 +272,7 @@
     </div>
     <div class="field-group" style="margin-bottom:16px;">
       <div class="field-label">Phone</div>
-      <input class="field-input" id="contractorPhone" type="tel" placeholder="701-555-0100">
+      <input class="field-input" id="contractorPhone" type="tel" placeholder="701-555-0100" oninput="formatPhone(this)" maxlength="12">
     </div>
     <hr class="divider">
     <div class="sec-title">Unit Prices</div>
@@ -638,6 +638,15 @@ function savePrices() {
   updateContractorDisplay();
   buildChecklist();
   closeSettings();
+}
+function formatPhone(input) {
+  let v = input.value.replace(/\D/g, '').substring(0, 10);
+  if (v.length >= 7) {
+    v = v.slice(0,3) + '-' + v.slice(3,6) + '-' + v.slice(6);
+  } else if (v.length >= 4) {
+    v = v.slice(0,3) + '-' + v.slice(3);
+  }
+  input.value = v;
 }
 </script>
 </body>
