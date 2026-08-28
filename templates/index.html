@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>VoiceEstimate</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface2: #1c1c1c;
+    --border: #2a2a2a;
+    --orange: #f97316;
+    --orange-dim: #c2580f;
+    --text: #f0f0f0;
+    --text-muted: #888;
+    --text-dim: #444;
+    --green: #22c55e;
+    --red: #ef4444;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; min-height:100vh; display:flex; flex-direction:column; }
+
+  /* HEADER */
+  header { padding:18px 20px 0; display:flex; align-items:center; justify-content:space-between; }
+  .logo { display:flex; align-items:center; gap:10px; }
+  .logo-icon { width:34px; height:34px; background:var(--orange); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; }
+  .logo-text { font-size:15px; font-weight:700; }
+  .logo-sub { font-size:11px; color:var(--text-muted); }
+  .hdr-btns { display:flex; gap:8px; }
+  .icon-btn { width:34px; height:34px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px; transition:all .2s; text-decoration:none; }
+  .icon-btn:hover { border-color:var(--orange); color:var(--orange); }
+
+  /* MAIN */
+  main { flex:1; padding:20px; display:flex; flex-direction:column; gap:16px; max-width:480px; margin:0 auto; width:100%; }
+
+  /* SECTIONS */
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
+  .sec-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:12px; }
+
+  /* RECORD */
+  .record-wrap { display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .record-btn { width:88px; height:88px; border-radius:50%; background:var(--orange); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:32px; transition:all .2s; }
+  .record-btn:hover { background:var(--orange-dim); transform:scale(1.04); }
+  .record-btn.recording { background:var(--red); animation:pulse 1.5s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(239,68,68,.4)} 70%{box-shadow:0 0 0 18px rgba(239,68,68,0)} 100%{box-shadow:0 0 0 0 rgba(239,68,68,0)} }
+  .rec-label { font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.8px; }
+  .waveform { display:flex; align-items:center; gap:3px; height:28px; opacity:0; transition:opacity .3s; }
+  .waveform.active { opacity:1; }
+  .wb { width:3px; background:var(--orange); border-radius:2px; animation:wave 1s ease-in-out infinite; }
+  .wb:nth-child(1){animation-delay:0s} .wb:nth-child(2){animation-delay:.1s} .wb:nth-child(3){animation-delay:.2s} .wb:nth-child(4){animation-delay:.3s} .wb:nth-child(5){animation-delay:.4s} .wb:nth-child(6){animation-delay:.3s} .wb:nth-child(7){animation-delay:.2s} .wb:nth-child(8){animation-delay:.1s} .wb:nth-child(9){animation-delay:0s}
+  @keyframes wave { 0%,100%{height:6px} 50%{height:24px} }
+
+  /* CHECKLIST */
+  .checklist { display:grid; grid-template-columns:1fr 1fr; gap:5px; width:100%; }
+  .check-item { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:6px 8px; }
+  .check-name { font-size:10px; font-weight:600; color:var(--text-muted); line-height:1.3; }
+  .check-unit { font-size:9px; color:var(--text-dim); margin-top:1px; }
+
+  /* TRANSCRIPT */
+  .transcript { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; font-size:13px; color:var(--text-muted); font-style:italic; line-height:1.5; display:none; }
+  .transcript.show { display:block; }
+
+  /* BUTTONS */
+  .btn { width:100%; padding:13px; border:none; border-radius:var(--radius-sm); font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; display:none; }
+  .btn.show { display:block; }
+  .btn-orange { background:var(--orange); color:#fff; }
+  .btn-orange:hover { background:var(--orange-dim); }
+  .btn-orange:disabled { opacity:.5; cursor:not-allowed; }
+  .btn-outline { background:var(--surface); color:var(--text); border:1px solid var(--border); }
+  .btn-outline:hover { border-color:var(--orange); color:var(--orange); }
+
+  /* CUSTOMER */
+  .field-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; font-weight:600; }
+  .field-input { width:100%; padding:10px 12px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text); font-size:14px; }
+  .field-input:focus { outline:none; border-color:var(--orange); }
+  .field-group { margin-bottom:10px; }
+  .field-group:last-child { margin-bottom:0; }
+
+  /* ESTIMATE META */
+  .meta-row { display:flex; justify-content:space-between; margin-bottom:5px; font-size:12px; }
+  .meta-row:last-child { margin-bottom:0; }
+  .meta-label { color:var(--text-muted); }
+  .meta-val { font-weight:600; }
+
+  /* LINE ITEMS */
+  .item-row { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:11px 13px; display:grid; grid-template-columns:1fr auto; gap:4px; margin-bottom:7px; }
+  .item-row:last-child { margin-bottom:0; }
+  .item-name { font-size:13px; font-weight:600; }
+  .item-detail { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .item-total { font-size:14px; font-weight:700; color:var(--orange); align-self:center; text-align:right; }
+
+  /* TOTALS */
+  .total-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); }
+  .total-row:last-child { border-bottom:none; }
+  .total-row.grand { background:var(--orange); border-radius:var(--radius-sm); padding:12px 14px; margin-top:4px; border:none; }
+  .total-label { font-size:13px; color:var(--text-muted); }
+  .total-label.grand { color:#fff; font-weight:700; font-size:14px; text-transform:uppercase; letter-spacing:.5px; }
+  .total-amt { font-size:15px; font-weight:700; }
+  .total-amt.grand { font-size:20px; color:#fff; }
+
+  /* MATERIALS */
+  .mat-input-wrap { display:flex; align-items:center; gap:8px; }
+  .mat-prefix { font-size:18px; color:var(--text-muted); font-weight:700; }
+  .mat-input { flex:1; padding:10px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text); font-size:18px; font-weight:700; }
+  .mat-input:focus { outline:none; border-color:var(--orange); }
+
+  /* ACTIONS */
+  .actions { display:none; gap:10px; }
+  .actions.show { display:flex; }
+  .btn-pdf { flex:2; padding:13px; background:var(--orange); color:#fff; border:none; border-radius:var(--radius-sm); font-size:14px; font-weight:700; cursor:pointer; }
+  .btn-pdf:hover { background:var(--orange-dim); }
+  .btn-clear { flex:1; padding:13px; background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-weight:600; cursor:pointer; }
+  .btn-clear:hover { border-color:var(--orange); color:var(--orange); }
+
+  /* SETTINGS MODAL */
+  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:100; display:none; align-items:flex-end; justify-content:center; }
+  .overlay.open { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius) var(--radius) 0 0; padding:22px 20px 36px; width:100%; max-width:480px; max-height:85vh; overflow-y:auto; }
+  .modal-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .modal-title { font-size:15px; font-weight:700; }
+  .modal-close { background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer; }
+  .modal-sub { font-size:12px; color:var(--text-muted); margin-bottom:18px; line-height:1.5; }
+  .price-row { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; margin-bottom:10px; }
+  .price-label { font-size:13px; }
+  .price-unit { font-size:11px; color:var(--text-dim); margin-top:2px; }
+  .price-input { width:88px; padding:8px 10px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text); font-size:14px; font-weight:600; text-align:right; }
+  .price-input:focus { outline:none; border-color:var(--orange); }
+  .save-btn { width:100%; padding:13px; background:var(--orange); color:#fff; border:none; border-radius:var(--radius-sm); font-size:14px; font-weight:700; cursor:pointer; margin-top:6px; }
+  .divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
+
+  /* HISTORY PAGE */
+  #historyPage { display:none; flex-direction:column; }
+  .hist-row { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:8px; }
+  .hist-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px; }
+  .hist-customer { font-size:14px; font-weight:600; }
+  .hist-total { font-size:14px; font-weight:700; color:var(--orange); }
+  .hist-meta { font-size:11px; color:var(--text-muted); }
+  .hist-btn { font-size:11px; color:var(--orange); background:none; border:none; cursor:pointer; padding:0; text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <div class="logo-text">VoiceEstimate</div>
+      <div class="logo-sub">Voice to estimate in seconds</div>
+    </div>
+  </div>
+  <div class="hdr-btns">
+    <button class="icon-btn" onclick="showHistory()" title="History">📋</button>
+    <button class="icon-btn" onclick="openSettings()" title="Settings">⚙</button>
+  </div>
+</header>
+
+<!-- MAIN PAGE -->
+<main id="mainPage">
+
+  <!-- ESTIMATE META -->
+  <div class="card" id="estimateMeta" style="display:none;">
+    <div class="meta-row"><span class="meta-label">Estimate</span><span class="meta-val" id="estimateNum">EST-001</span></div>
+    <div class="meta-row"><span class="meta-label">Date</span><span class="meta-val" id="estimateDate"></span></div>
+    <div class="meta-row"><span class="meta-label">Contractor</span><span class="meta-val" id="contractorDisplay">—</span></div>
+  </div>
+
+  <!-- RECORD -->
+  <div class="card">
+    <div class="record-wrap">
+      <div class="rec-label" id="recLabel">Tap to Record</div>
+      <button class="record-btn" id="recordBtn" onclick="toggleRecord()">🎙</button>
+      <div class="waveform" id="waveform">
+        <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+        <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+        <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+      </div>
+      <div class="transcript show" id="transcriptBox" style="display:none;font-style:italic;"></div>
+      <div style="width:100%;">
+        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;text-align:center;">Say these items with quantities</div>
+        <div class="checklist" id="checklist"></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-orange" id="parseBtn" onclick="parseEstimate()">Parse Line Items →</button>
+
+  <!-- CUSTOMER -->
+  <div class="card" id="customerSection" style="display:none;">
+    <div class="sec-title">Customer Info</div>
+    <div class="field-group">
+      <div class="field-label">Customer Name</div>
+      <input class="field-input" id="customerName" type="text" placeholder="John Smith">
+    </div>
+    <div class="field-group">
+      <div class="field-label">Job Address</div>
+      <input class="field-input" id="customerAddress" type="text" placeholder="123 Main St, Minot, ND">
+    </div>
+  </div>
+
+  <!-- LINE ITEMS -->
+  <div class="card" id="lineItemsSection" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="sec-title" style="margin-bottom:0;">Line Items</div>
+      <span style="font-size:12px;color:var(--orange);font-weight:600;" id="itemCount"></span>
+    </div>
+    <div id="lineItemsList"></div>
+  </div>
+
+  <!-- MATERIALS -->
+  <div class="card" id="materialsSection" style="display:none;">
+    <div class="sec-title">Building Materials</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Total from your supplier quote</div>
+    <div class="mat-input-wrap">
+      <span class="mat-prefix">$</span>
+      <input class="mat-input" type="number" id="materialsTotal" placeholder="0.00" min="0" step="0.01" oninput="updateTotals()">
+    </div>
+  </div>
+
+  <!-- TOTALS -->
+  <div class="card" id="totalsSection" style="display:none;">
+    <div class="total-row">
+      <span class="total-label">Labor Total</span>
+      <span class="total-amt" id="laborTotal">$0.00</span>
+    </div>
+    <div class="total-row">
+      <span class="total-label">Materials</span>
+      <span class="total-amt" id="materialsDisplay">$0.00</span>
+    </div>
+    <div class="total-row grand">
+      <span class="total-label grand">Grand Total</span>
+      <span class="total-amt grand" id="grandTotal">$0.00</span>
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="actions" id="actions">
+    <button class="btn-clear" onclick="clearEstimate()">Clear</button>
+    <button class="btn-pdf" onclick="downloadPDF()">⬇ Download PDF</button>
+  </div>
+
+</main>
+
+<!-- HISTORY PAGE -->
+<main id="historyPage">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+    <button class="icon-btn" onclick="showMain()">←</button>
+    <div style="font-size:16px;font-weight:700;">Estimate History</div>
+  </div>
+  <div id="historyList" style="margin-top:8px;"></div>
+</main>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="settingsOverlay" onclick="closeSettingsOutside(event)">
+  <div class="modal">
+    <div class="modal-hdr">
+      <span class="modal-title">Your Rates</span>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+    <p class="modal-sub">Set once. Every estimate uses your rates. Stored on this device only.</p>
+    <hr class="divider">
+    <div class="field-group">
+      <div class="field-label">Your Name / Company</div>
+      <input class="field-input" id="contractorName" type="text" placeholder="Jamie Bergan Framing">
+    </div>
+    <div class="field-group" style="margin-bottom:16px;">
+      <div class="field-label">Phone</div>
+      <input class="field-input" id="contractorPhone" type="tel" placeholder="701-555-0100">
+    </div>
+    <hr class="divider">
+    <div class="sec-title">Unit Prices</div>
+    <div id="priceGrid" style="margin-top:10px;"></div>
+    <button class="save-btn" onclick="savePrices()">Save Rates</button>
+  </div>
+</div>
+
+<script>
+const DEFAULT_PRICES = {
+  framing:    { label:'Framing Labor',    unit:'per LF wall',  price:13    },
+  osb:        { label:'OSB Sheathing',    unit:'per sheet',    price:52    },
+  siding:     { label:'Vinyl Siding',     unit:'per SF',       price:4.50  },
+  roofing:    { label:'Roofing',          unit:'per square',   price:350   },
+  windows:    { label:'Windows',          unit:'per unit',     price:350   },
+  doors:      { label:'Exterior Doors',   unit:'per unit',     price:1300  },
+  insulation: { label:'Insulation',       unit:'per SF',       price:1.60  },
+  drywall:    { label:'Drywall',          unit:'per SF',       price:2.80  },
+  concrete:   { label:'Concrete',         unit:'per LF',       price:42    },
+  electrical: { label:'Electrical',       unit:'per SF home',  price:5.00  },
+  plumbing:   { label:'Plumbing',         unit:'per SF home',  price:6.00  },
+  hvac:       { label:'HVAC',             unit:'per SF home',  price:10.00 },
+  painting:   { label:'Painting',         unit:'per SF',       price:2.80  },
+  hauling:    { label:'Hauling',          unit:'per load',     price:500   },
+  labor:      { label:'General Labor',    unit:'per hour',     price:38    },
+};
+
+let isRecording = false, mediaRecorder = null, audioChunks = [], transcript = '', lineItems = [];
+let estimateCounter = parseInt(localStorage.getItem('estCounter') || '1');
+
+function loadPrices() {
+  const s = localStorage.getItem('prices');
+  return s ? JSON.parse(s) : DEFAULT_PRICES;
+}
+
+function loadContractor() {
+  return { name: localStorage.getItem('cName') || '', phone: localStorage.getItem('cPhone') || '' };
+}
+
+window.onload = () => {
+  buildChecklist();
+  buildPriceGrid();
+  setMeta();
+  updateContractorDisplay();
+  if (!localStorage.getItem('prices')) setTimeout(openSettings, 500);
+};
+
+function setMeta() {
+  const d = new Date();
+  document.getElementById('estimateDate').textContent = d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  document.getElementById('estimateNum').textContent = 'EST-' + String(estimateCounter).padStart(3,'0');
+}
+
+function updateContractorDisplay() {
+  const c = loadContractor();
+  document.getElementById('contractorDisplay').textContent = c.name || '—';
+}
+
+function buildChecklist() {
+  const prices = loadPrices();
+  const c = document.getElementById('checklist');
+  c.innerHTML = '';
+  Object.values(prices).forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'check-item';
+    el.innerHTML = `<div class="check-name">${item.label}</div><div class="check-unit">${item.unit}</div>`;
+    c.appendChild(el);
+  });
+}
+
+async function toggleRecord() {
+  if (!isRecording) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      mediaRecorder.onstop = sendAudio;
+      mediaRecorder.start();
+      isRecording = true;
+      document.getElementById('recordBtn').classList.add('recording');
+      document.getElementById('recordBtn').textContent = '⏹';
+      document.getElementById('recLabel').textContent = 'Recording…';
+      document.getElementById('waveform').classList.add('active');
+    } catch(e) { alert('Microphone access required.'); }
+  } else {
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+    isRecording = false;
+    document.getElementById('recordBtn').classList.remove('recording');
+    document.getElementById('recordBtn').textContent = '⏳';
+    document.getElementById('recLabel').textContent = 'Processing…';
+    document.getElementById('waveform').classList.remove('active');
+  }
+}
+
+async function sendAudio() {
+  const blob = new Blob(audioChunks, { type:'audio/webm' });
+  const fd = new FormData();
+  fd.append('audio', blob, 'rec.webm');
+  try {
+    const res = await fetch('/transcribe', { method:'POST', body:fd });
+    const data = await res.json();
+    transcript = data.transcript || '';
+    const tb = document.getElementById('transcriptBox');
+    tb.textContent = transcript || 'Could not transcribe. Try again.';
+    tb.style.display = 'block';
+    document.getElementById('recordBtn').textContent = '🎙';
+    document.getElementById('recLabel').textContent = 'Tap to record again';
+    if (transcript) { document.getElementById('parseBtn').classList.add('show'); document.getElementById('parseBtn').style.display='block'; }
+  } catch(e) {
+    document.getElementById('recordBtn').textContent = '🎙';
+    document.getElementById('recLabel').textContent = 'Tap to record';
+  }
+}
+
+async function parseEstimate() {
+  const btn = document.getElementById('parseBtn');
+  btn.disabled = true; btn.textContent = 'Parsing…';
+  const prices = loadPrices();
+  try {
+    const res = await fetch('/parse', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ transcript, prices }) });
+    const data = await res.json();
+    lineItems = data.items || [];
+    renderLineItems();
+  } catch(e) { alert('Parse error.'); }
+  btn.disabled = false; btn.textContent = 'Parse Line Items →';
+}
+
+function renderLineItems() {
+  const list = document.getElementById('lineItemsList');
+  list.innerHTML = '';
+  lineItems.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'item-row';
+    el.innerHTML = `<div><div class="item-name">${item.name}</div><div class="item-detail">${item.qty} ${item.unit} × $${parseFloat(item.unit_price).toFixed(2)}</div></div><div class="item-total">$${parseFloat(item.total).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>`;
+    list.appendChild(el);
+  });
+  document.getElementById('itemCount').textContent = lineItems.length + ' item' + (lineItems.length !== 1 ? 's' : '');
+  show('estimateMeta'); show('customerSection'); show('lineItemsSection'); show('materialsSection'); show('totalsSection');
+  document.getElementById('actions').classList.add('show');
+  updateTotals();
+}
+
+function show(id) { document.getElementById(id).style.display = 'block'; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+
+function updateTotals() {
+  const labor = lineItems.reduce((s,i) => s + parseFloat(i.total||0), 0);
+  const mats = parseFloat(document.getElementById('materialsTotal').value) || 0;
+  const grand = labor + mats;
+  const fmt = n => '$' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('laborTotal').textContent = fmt(labor);
+  document.getElementById('materialsDisplay').textContent = fmt(mats);
+  document.getElementById('grandTotal').textContent = fmt(grand);
+}
+
+function clearEstimate() {
+  lineItems = []; transcript = '';
+  ['estimateMeta','customerSection','lineItemsSection','materialsSection','totalsSection'].forEach(hide);
+  document.getElementById('actions').classList.remove('show');
+  document.getElementById('transcriptBox').style.display='none';
+  document.getElementById('parseBtn').style.display='none';
+  document.getElementById('parseBtn').classList.remove('show');
+  document.getElementById('materialsTotal').value='';
+  document.getElementById('customerName').value='';
+  document.getElementById('customerAddress').value='';
+  document.getElementById('recordBtn').textContent='🎙';
+  document.getElementById('recLabel').textContent='Tap to Record';
+}
+
+function downloadPDF() {
+  const c = loadContractor();
+  const labor = lineItems.reduce((s,i) => s + parseFloat(i.total||0), 0);
+  const mats = parseFloat(document.getElementById('materialsTotal').value) || 0;
+  const p = new URLSearchParams({
+    items: JSON.stringify(lineItems),
+    contractor: c.name, phone: c.phone,
+    customer_name: document.getElementById('customerName').value,
+    customer_address: document.getElementById('customerAddress').value,
+    materials: mats,
+    labor_total: labor,
+    estimate_num: document.getElementById('estimateNum').textContent,
+    date: document.getElementById('estimateDate').textContent,
+  });
+  // Auto-save
+  fetch('/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+    estimate_num: document.getElementById('estimateNum').textContent,
+    contractor: c.name, phone: c.phone,
+    customer_name: document.getElementById('customerName').value,
+    customer_address: document.getElementById('customerAddress').value,
+    items: lineItems, materials: mats,
+    total: labor + mats,
+    date: document.getElementById('estimateDate').textContent,
+  })}).catch(()=>{});
+  estimateCounter++;
+  localStorage.setItem('estCounter', estimateCounter);
+  window.open('/pdf?' + p.toString(), '_blank');
+}
+
+// HISTORY
+function showHistory() {
+  document.getElementById('mainPage').style.display='none';
+  document.getElementById('historyPage').style.display='flex';
+  loadHistory();
+}
+function showMain() {
+  document.getElementById('historyPage').style.display='none';
+  document.getElementById('mainPage').style.display='flex';
+}
+async function loadHistory() {
+  const list = document.getElementById('historyList');
+  list.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Loading…</div>';
+  try {
+    const res = await fetch('/estimates');
+    const data = await res.json();
+    if (!data.estimates || !data.estimates.length) { list.innerHTML='<div style="color:var(--text-muted);font-size:13px;">No saved estimates yet.</div>'; return; }
+    list.innerHTML='';
+    data.estimates.forEach(e => {
+      const el = document.createElement('div');
+      el.className='hist-row';
+      el.innerHTML=`<div class="hist-top"><div><div class="hist-customer">${e.customer||'No customer'}</div><div class="hist-meta">${e.estimate_num} · ${e.date||''}</div></div><div class="hist-total">$${parseFloat(e.total||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div><div style="margin-top:8px;"><button class="hist-btn" onclick="redownload(${e.id})">Download PDF</button></div>`;
+      list.appendChild(el);
+    });
+  } catch(e) { list.innerHTML='<div style="color:var(--text-muted);font-size:13px;">Could not load history.</div>'; }
+}
+async function redownload(id) {
+  const res = await fetch('/estimates/' + id);
+  const e = await res.json();
+  const p = new URLSearchParams({
+    items: JSON.stringify(e.items), contractor: e.contractor, phone: e.phone||'',
+    customer_name: e.customer||'', customer_address: e.address||'',
+    materials: e.materials||0, labor_total: e.labor_total||0,
+    estimate_num: e.estimate_num, date: e.date||'',
+  });
+  window.open('/pdf?' + p.toString(), '_blank');
+}
+
+// SETTINGS
+function buildPriceGrid() {
+  const prices = loadPrices();
+  const grid = document.getElementById('priceGrid');
+  grid.innerHTML='';
+  Object.entries(prices).forEach(([key, item]) => {
+    const row = document.createElement('div');
+    row.className='price-row';
+    row.innerHTML=`<div><div class="price-label">${item.label}</div><div class="price-unit">${item.unit}</div></div><input class="price-input" id="p_${key}" type="number" value="${item.price}" step="0.01" min="0">`;
+    grid.appendChild(row);
+  });
+  if (document.getElementById('contractorName')) document.getElementById('contractorName').value = loadContractor().name;
+  if (document.getElementById('contractorPhone')) document.getElementById('contractorPhone').value = loadContractor().phone;
+}
+function openSettings() { buildPriceGrid(); document.getElementById('settingsOverlay').classList.add('open'); }
+function closeSettings() { document.getElementById('settingsOverlay').classList.remove('open'); }
+function closeSettingsOutside(e) { if (e.target===document.getElementById('settingsOverlay')) closeSettings(); }
+function savePrices() {
+  const prices = loadPrices();
+  Object.keys(prices).forEach(k => { const i = document.getElementById('p_'+k); if(i) prices[k].price = parseFloat(i.value)||0; });
+  localStorage.setItem('prices', JSON.stringify(prices));
+  localStorage.setItem('cName', document.getElementById('contractorName').value);
+  localStorage.setItem('cPhone', document.getElementById('contractorPhone').value);
+  updateContractorDisplay();
+  buildChecklist();
+  closeSettings();
+}
+</script>
+</body>
+</html>
