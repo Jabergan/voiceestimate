@@ -95,7 +95,7 @@ def parse():
     prompt = "/no_think\n" + QWEN_SYSTEM + "\n\nUnit prices:\n" + "\n".join(rate_lines) + "\n\nJob description: " + transcript + "\n\nReturn JSON array only."
     try:
         payload = json.dumps({
-            'model': 'qwen3:8b', 'prompt': prompt, 'stream': False,
+            'model': 'qwen3:14b', 'prompt': prompt, 'stream': False,
             'options': {'temperature': 0.1, 'num_predict': 2048}
         }).encode()
         req = urllib.request.Request(
@@ -338,7 +338,7 @@ if __name__ == '__main__':
         time.sleep(60)
         while True:
             try:
-                p = json.dumps({'model': 'qwen3:8b', 'prompt': 'hi', 'stream': False,
+                p = json.dumps({'model': 'qwen3:14b', 'prompt': 'hi', 'stream': False,
                                 'keep_alive': -1, 'options': {'num_predict': 1}}).encode()
                 r = urllib.request.Request('http://localhost:11434/api/generate', data=p,
                                            headers={'Content-Type': 'application/json'}, method='POST')
