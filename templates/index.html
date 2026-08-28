@@ -535,7 +535,7 @@ async function loadHistory() {
     data.estimates.forEach(e => {
       const el = document.createElement('div');
       el.className='hist-row';
-      el.innerHTML=`<div class="hist-top"><div><div class="hist-customer">${e.customer||'No customer'}</div><div class="hist-meta">${e.estimate_num} · ${e.date||''}</div></div><div class="hist-total">$${parseFloat(e.total||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div><div style="margin-top:8px;display:flex;gap:8px;"><button class="hist-btn" onclick="redownload(${e.id})">Download PDF</button><button class="hist-btn" style="background:#1c1c1c;border:1px solid #2a2a2a;color:#f0f0f0;" onclick="emailFromHistory(${e.id}, this)">✉ Email</button></div>`;
+      el.innerHTML=`<div class="hist-top"><div><div class="hist-customer">${e.customer||'No customer'}</div><div class="hist-meta">${e.estimate_num} · ${e.date||''}</div></div><div class="hist-total">$${parseFloat(e.total||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div><div style="margin-top:8px;display:flex;gap:8px;"><button class="hist-btn" onclick="redownload(${e.id})">Download PDF</button><button class="hist-btn" style="background:#1c1c1c;border:1px solid #2a2a2a;color:#f0f0f0;" onclick="emailFromHistory(${e.id}, this)">✉ Email</button><button class="hist-btn" style="background:#1c1c1c;border:1px solid #2a2a2a;color:#f97316;" onclick="editEstimate(${e.id})">✏ Edit</button></div>`;
       list.appendChild(el);
     });
   } catch(e) { list.innerHTML='<div style="color:var(--text-muted);font-size:13px;">Could not load history.</div>'; }
@@ -574,6 +574,30 @@ async function emailFromHistory(id, btn) {
     alert('Email failed: ' + err.message);
     btn.textContent = '✉ Email'; btn.disabled = false;
   }
+}
+
+async function editEstimate(id) {
+  const res = await fetch('/estimates/' + id);
+  const e = await res.json();
+  // Switch to main page
+  showMain();
+  // Populate customer fields
+  document.getElementById('customerName').value = e.customer || '';
+  document.getElementById('customerAddress').value = e.address || '';
+  const emailEl = document.getElementById('customerEmail');
+  if (emailEl) emailEl.value = '';
+  // Load line items
+  lineItems = e.items || [];
+  renderLineItems();
+  // Set materials
+  document.getElementById('materialsTotal').value = e.materials || 0;
+  updateTotals();
+  // Set estimate number
+  const numEl = document.getElementById('estimateNum');
+  if (numEl) numEl.textContent = e.estimate_num;
+  // Show all sections
+  show('estimateMeta'); show('customerSection'); show('lineItemsSection');
+  show('materialsSection'); show('totalsSection'); show('actions');
 }
 
 async function redownload(id) {
