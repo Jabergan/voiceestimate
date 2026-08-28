@@ -579,25 +579,26 @@ async function emailFromHistory(id, btn) {
 async function editEstimate(id) {
   const res = await fetch('/estimates/' + id);
   const e = await res.json();
+  if (!e.items || !e.items.length) { alert('Could not load estimate items.'); return; }
   // Switch to main page
   showMain();
+  // Small delay to let DOM settle after page switch
+  await new Promise(r => setTimeout(r, 50));
   // Populate customer fields
   document.getElementById('customerName').value = e.customer || '';
   document.getElementById('customerAddress').value = e.address || '';
   const emailEl = document.getElementById('customerEmail');
   if (emailEl) emailEl.value = '';
-  // Load line items
-  lineItems = e.items || [];
-  renderLineItems();
-  // Set materials
-  document.getElementById('materialsTotal').value = e.materials || 0;
-  updateTotals();
   // Set estimate number
   const numEl = document.getElementById('estimateNum');
   if (numEl) numEl.textContent = e.estimate_num;
-  // Show all sections
-  show('estimateMeta'); show('customerSection'); show('lineItemsSection');
-  show('materialsSection'); show('totalsSection'); show('actions');
+  // Load ALL line items
+  lineItems = e.items.slice();
+  // Set materials
+  document.getElementById('materialsTotal').value = e.materials || 0;
+  // Render everything
+  renderLineItems();
+  updateTotals();
 }
 
 async function redownload(id) {
