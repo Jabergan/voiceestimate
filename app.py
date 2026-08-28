@@ -133,7 +133,7 @@ def save():
     conn.execute(
         'INSERT INTO estimates (estimate_num,contractor,phone,customer,address,items_json,materials,total,created_at) VALUES (?,?,?,?,?,?,?,?,?)',
         (d.get('estimate_num',''), d.get('contractor',''), d.get('phone',''),
-         d.get('customer',''), d.get('address',''), json.dumps(items),
+         d.get('customer', d.get('customer_name','')), d.get('address', d.get('customer_address','')), json.dumps(items),
          float(d.get('materials', 0)), total,
          datetime.date.today().strftime('%b %d, %Y'))
     )
