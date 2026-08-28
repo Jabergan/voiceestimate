@@ -267,6 +267,58 @@ def send_email():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/estimates/json')
+def estimates_json():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute('SELECT * FROM estimates ORDER BY id DESC').fetchall()
+    conn.close()
+    result = []
+    for r in rows:
+        try:
+            items = json.loads(r['items_json'])
+        except Exception:
+            items = []
+        result.append({
+            'id':           r['id'],
+            'estimate_num': r['estimate_num'],
+            'contractor':   r['contractor'],
+            'phone':        r['phone'],
+            'customer':     r['customer'],
+            'address':      r['address'],
+            'items':        items,
+            'materials':    r['materials'],
+            'total':        r['total'],
+            'date':         r['created_at'],
+        })
+    return jsonify({'estimates': result})
+
+@app.route('/estimates/<int:est_id>')
+def estimate_by_id(est_id):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    r = conn.execute('SELECT * FROM estimates WHERE id=?', (est_id,)).fetchone()
+    conn.close()
+    if not r:
+        return jsonify({'error': 'Not found'}), 404
+    try:
+        items = json.loads(r['items_json'])
+    except Exception:
+        items = []
+    return jsonify({
+        'id':           r['id'],
+        'estimate_num': r['estimate_num'],
+        'contractor':   r['contractor'],
+        'phone':        r['phone'],
+        'customer':     r['customer'],
+        'address':      r['address'],
+        'items':        items,
+        'materials':    r['materials'],
+        'total':        r['total'],
+        'date':         r['created_at'],
+    })
+
 if __name__ == '__main__':
     import threading
     def keep_warm():

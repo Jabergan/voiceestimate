@@ -528,7 +528,7 @@ async function loadHistory() {
   const list = document.getElementById('historyList');
   list.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Loading…</div>';
   try {
-    const res = await fetch('/estimates');
+    const res = await fetch('/estimates/json');
     const data = await res.json();
     if (!data.estimates || !data.estimates.length) { list.innerHTML='<div style="color:var(--text-muted);font-size:13px;">No saved estimates yet.</div>'; return; }
     list.innerHTML='';
