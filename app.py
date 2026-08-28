@@ -319,6 +319,18 @@ def estimate_by_id(est_id):
         'date':         r['created_at'],
     })
 
+
+@app.route('/estimates/<int:est_id>', methods=['DELETE'])
+def delete_estimate(est_id):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute('DELETE FROM estimates WHERE id=?', (est_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     import threading
     def keep_warm():
